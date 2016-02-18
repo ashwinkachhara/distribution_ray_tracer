@@ -16,7 +16,7 @@ PVector ka = new PVector(0, 0, 0);
 PVector kd = new PVector(0, 0, 0);
 // Arrays to store properties of objects and lights
 Shape[] objects = new Shape[2000];
-PtLight[] lights = new PtLight[10];
+Light[] lights = new Light[20];
 int numLights=0, numObjects=0;
 int raysPerPx;
 
@@ -271,7 +271,32 @@ void interpreter(String filename) {
 
       objects[numObjects] = new Sphere(Pp1, r, ka, kd, true, Pp1, Pp2);
       numObjects++;
-    
+//////////////////// disk_light ////////////////////
+    } else if (token[0].equals("disk_light")){
+      float x = float(token[1]);
+      float y = float(token[2]);
+      float z = float(token[3]);
+      float radius = float(token[4]);
+      float r = float(token[8]);
+      float g = float(token[9]);
+      float b = float(token[10]);
+
+      PVector p = new PVector(x, y, z);
+      PVector n = new PVector(float(token[5]), float(token[6]), float(token[7]));
+      PVector c = new PVector(r, g, b);
+      
+      PMatrix3D mat = (PMatrix3D) getMatrix();
+      PVector Lp = new PVector(0, 0, 0);
+      PVector Ln = new PVector(0, 0, 0);
+
+      mat.mult(p, Lp);
+      mat.mult(n, Ln);
+
+      lights[numLights] = new DiskLight(Lp, Ln, c, radius);
+      numLights++;
+//////////////////// lens ////////////////////
+    } else if (token[0].equals("lens")){
+      
 //////////////////// write ////////////////////
     } else if (token[0].equals("write")) {
       // save the current image to a .png file
@@ -291,20 +316,14 @@ void interpreter(String filename) {
       for (int x=0; x<width; x++) {
         for (int y=0; y<height; y++) {
           //println("Iterating over pixels");
-          
-          // Pixel Bound
-          // x1 +- x*(winsize/(1.0*screen_width))
-          // y1 +- y*(winsize/(1.0*screen_width))
-          // random(x1-d,x1+d)
-          // random(y1-d,y1+d)
-          
+                   
           PVector rayP;
           // Pixel Center coords
           float x1 = (x - screen_width*1.0/2)*(winsize*2.0/(1.0*screen_width));
           float y1 = (y - screen_width*1.0/2)*(winsize*2.0/(1.0*screen_width));
           
-          float pxbound = ((winsize*1.0)/(1.0*screen_width));
-          PVector pxcolor = new PVector(0,0,0);
+          float pxbound = ((winsize*1.0)/(1.0*screen_width)); // Pixel bound each side from the center.
+          PVector pxcolor = new PVector(0,0,0); // For anti-aliasing in case of multiple rays per pixel
           //println("Per Ray");
           for (int r=0; r<raysPerPx;r++){
             if (raysPerPx == 1){
@@ -312,7 +331,7 @@ void interpreter(String filename) {
             } else {
               rayP = new PVector(random(x1-pxbound,x1+pxbound),random(y1-pxbound,y1+pxbound),-1);
             }
-            float time = random(0.0,1.0);
+            float time = random(0.0,1.0); // For motion blur
             //if (x%50 == 0 && y%50 == 0)
             //  println(x+" "+y+" "+x1+" "+y1+" "+rayP+" "+pxbound);
   
@@ -356,11 +375,11 @@ void interpreter(String filename) {
               for (int l=0; l<numLights; l++) {
                 pxcol.add(objects[obIndex].calcAmbient(l));
                 //println("Ambient: "+pxcolor.x+" "+pxcolor.y+" "+pxcolor.z);
-                if (lights[l].visible(P, normal, obIndex)) {
+                //if (lights[l].visible(P, normal, obIndex)) {
                   //println("visible");
                   //println(lights[l].visible(P,normal,obIndex));
-                  pxcol.add(objects[obIndex].calcDiffuse(P, normal, l));
-                }
+                pxcol.add(objects[obIndex].calcDiffuse(P, normal, l).mult(lights[l].visible(P, normal, obIndex)));
+                
               }
               //pixels[loc] = color(pxcolor.x,pxcolor.y,pxcolor.z);
               //set(x, 299 - y, color(pxcol.x, pxcol.y, pxcol.z));

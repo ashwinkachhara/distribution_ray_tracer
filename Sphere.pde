@@ -89,19 +89,21 @@ class Sphere extends Shape{
   
   PVector calcDiffuse(PVector P, PVector n, int l){
     PVector col = new PVector(0,0,0);
-    PVector L = PVector.sub(lights[l].pos,P);
+    PVector L = lights[l].vec2Light(P);//PVector.sub(lights[l].pos,P);
     L.normalize();
-    col.x = Cd.x*(PVector.dot(L,n))*lights[l].lColor.x;
-    col.y = Cd.y*(PVector.dot(L,n))*lights[l].lColor.y;
-    col.z = Cd.z*(PVector.dot(L,n))*lights[l].lColor.z;
+    PVector lColor = lights[l].getColor();
+    col.x = Cd.x*(PVector.dot(L,n))*lColor.x;
+    col.y = Cd.y*(PVector.dot(L,n))*lColor.y;
+    col.z = Cd.z*(PVector.dot(L,n))*lColor.z;
     return col;
   }
   
   PVector calcAmbient(int l){
     PVector col = new PVector(0,0,0);
-    col.x = Ca.x*lights[l].lColor.x;
-    col.y = Ca.y*lights[l].lColor.y;
-    col.z = Ca.z*lights[l].lColor.z;
+    PVector lColor = lights[l].getColor();
+    col.x = Ca.x*lColor.x;
+    col.y = Ca.y*lColor.y;
+    col.z = Ca.z*lColor.z;
     return col;
   }
   

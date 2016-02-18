@@ -28,7 +28,13 @@ class DiskLight extends Light{
     
     float sampleR = random(0.0,radius);
     float sampleTheta = random(0.0,2*PI);
-    PVector samplePos = new PVector(pos.x,pos.y+sqrt(sampleR)*cos(sampleTheta),pos.z+sqrt(sampleR)*sin(sampleTheta));
+    PVector samplePos = new PVector(0,0,0);
+    if (lNormal.equals(new PVector(1,0,0)) || lNormal.equals(new PVector(-1,0,0)))
+      samplePos = new PVector(pos.x,pos.y+sqrt(sampleR)*cos(sampleTheta),pos.z+sqrt(sampleR)*sin(sampleTheta));
+    else if (lNormal.equals(new PVector(0,1,0)) || lNormal.equals(new PVector(0,-1,0)))
+      samplePos = new PVector(pos.x+sqrt(sampleR)*cos(sampleTheta),pos.y,pos.z+sqrt(sampleR)*sin(sampleTheta));
+    else
+      samplePos = new PVector(pos.x+sqrt(sampleR)*cos(sampleTheta),pos.y+sqrt(sampleR)*sin(sampleTheta),pos.z);
     PVector v1 = PVector.sub(samplePos,pt);
     float d = v1.dot(normal);
     //return d>0;

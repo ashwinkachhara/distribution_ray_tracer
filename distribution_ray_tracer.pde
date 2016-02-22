@@ -19,6 +19,8 @@ Shape[] objects = new Shape[2000];
 Light[] lights = new Light[20];
 int numLights=0, numObjects=0;
 int raysPerPx;
+float lensRadius, lensFocal;
+boolean isLens;
 
 PVector[] polyVerts = new PVector[3];
 int curVert = 0;
@@ -297,6 +299,10 @@ void interpreter(String filename) {
 //////////////////// lens ////////////////////
     } else if (token[0].equals("lens")){
       
+      lensRadius = float(token[1]);
+      lensFocal = float(token[2]);
+      isLens = true;
+      
 //////////////////// write ////////////////////
     } else if (token[0].equals("write")) {
       // save the current image to a .png file
@@ -317,16 +323,31 @@ void interpreter(String filename) {
         for (int y=0; y<height; y++) {
           //println("Iterating over pixels");
                    
-          PVector rayP;
+          PVector rayP = new PVector(0,0,0);
           // Pixel Center coords
           float x1 = (x - screen_width*1.0/2)*(winsize*2.0/(1.0*screen_width));
           float y1 = (y - screen_width*1.0/2)*(winsize*2.0/(1.0*screen_width));
           
           float pxbound = ((winsize*1.0)/(1.0*screen_width)); // Pixel bound each side from the center.
           PVector pxcolor = new PVector(0,0,0); // For anti-aliasing in case of multiple rays per pixel
+          PVector focalHit = new PVector(0,0,-lensFocal);
           //println("Per Ray");
           for (int r=0; r<raysPerPx;r++){
-            if (raysPerPx == 1){
+            
+            PVector startPt = new PVector(0,0,0);
+            if (isLens){
+              if (r==0){
+                //println("once");
+                float t = -lensFocal/(-1);
+                rayP = new PVector(x1,y1,-1);
+                focalHit = PVector.mult(rayP,t);
+              }
+              float sampleR = random(0.0,lensRadius);
+              float sampleTheta = random(0.0,2*PI);
+              startPt = new PVector(sampleR*cos(sampleTheta),sampleR*sin(sampleTheta),0);
+              rayP = PVector.sub(focalHit,startPt);
+              
+            } else if (raysPerPx == 1){
               rayP = new PVector(x1, y1, -1);
             } else {
               rayP = new PVector(random(x1-pxbound,x1+pxbound),random(y1-pxbound,y1+pxbound),-1);
@@ -346,9 +367,9 @@ void interpreter(String filename) {
               //print(x+" "+y+" "+rayP+" ");
               float t;
               if (objects[o].isMoving())
-                t = objects[o].intersects(rayP, new PVector(0, 0, 0), time);
+                t = objects[o].intersects(rayP, startPt, time);
               else
-                t = objects[o].intersects(rayP, new PVector(0, 0, 0));
+                t = objects[o].intersects(rayP, startPt);
               if (t > 0 && t<minT) {
                 //println(t);
                 found = true;
@@ -361,8 +382,10 @@ void interpreter(String filename) {
               foundIndex++;
               //println("found: "+obIndex);
               PVector pxcol = new PVector(0, 0, 0);
-              PVector P = rayP.copy();
-              P.mult(minT);
+              PVector P = startPt;
+              P.add(PVector.mult(rayP,minT));
+              //rayP.copy();
+              //P.mult(minT);
               PVector normal = new PVector(0,0,0);
               if (objects[obIndex].isMoving())
                 normal = objects[obIndex].getNormal(P,time);
@@ -395,12 +418,13 @@ void interpreter(String filename) {
               //println("bgdone");
             }
           }
+          //println("col: "+pxcolor);
           pxcolor.div(raysPerPx);
           set(x, 299 - y, color(pxcolor.x, pxcolor.y, pxcolor.z));
         }
       }
       
-      //println("Found: "+foundIndex+" UnFound: "+unFoundIndex);
+      println("Found: "+foundIndex/raysPerPx+" UnFound: "+unFoundIndex/raysPerPx);
       println("DONE");
 
       save(token[1]);

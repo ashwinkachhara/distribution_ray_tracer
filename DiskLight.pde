@@ -24,6 +24,8 @@ class DiskLight extends Light{
     return lColor;
   }
   
+  /* This function assumes that the normal of the disk light is along either of the coordinate axes. My unsuccessful attempt at 
+  writing a function that does not make this assumption is below (commented out)*/
   float visible(PVector pt, PVector normal, int obIndex){
     
     float sampleR = random(0.0,radius);

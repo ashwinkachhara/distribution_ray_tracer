@@ -36,6 +36,7 @@ void reInit() {
   numObjects = 0;
   numLights = 0;
   bgcolor.set(0, 0, 0);
+  isLens = false;
   resetMatrix();
 }
 
